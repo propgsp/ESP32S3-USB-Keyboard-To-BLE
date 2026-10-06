@@ -32,90 +32,96 @@ void NVSUtils::copyNamespace(const char *src_ns, const char *dst_ns) {
   // Clear destination first to ensure exact copy
   nvs_erase_all(h_dst);
 
-  // Iterate over all entries in source namespace
-  nvs_iterator_t it = NULL;
-  err = nvs_entry_find("nvs", src_ns, NVS_TYPE_ANY, &it);
-  while (err == ESP_OK) {
+  // --- CORRECTED ITERATION LOGIC ---
+  // nvs_entry_find returns the iterator itself, not an error code.
+  nvs_iterator_t it = nvs_entry_find("nvs", src_ns, NVS_TYPE_ANY);
+
+  while (it != NULL) {
     nvs_entry_info_t info;
     nvs_entry_info(it, &info);
 
     // Copy based on type
     switch (info.type) {
-    case NVS_TYPE_U8: {
-      uint8_t v;
-      nvs_get_u8(h_src, info.key, &v);
-      nvs_set_u8(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_I8: {
-      int8_t v;
-      nvs_get_i8(h_src, info.key, &v);
-      nvs_set_i8(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_U16: {
-      uint16_t v;
-      nvs_get_u16(h_src, info.key, &v);
-      nvs_set_u16(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_I16: {
-      int16_t v;
-      nvs_get_i16(h_src, info.key, &v);
-      nvs_set_i16(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_U32: {
-      uint32_t v;
-      nvs_get_u32(h_src, info.key, &v);
-      nvs_set_u32(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_I32: {
-      int32_t v;
-      nvs_get_i32(h_src, info.key, &v);
-      nvs_set_i32(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_U64: {
-      uint64_t v;
-      nvs_get_u64(h_src, info.key, &v);
-      nvs_set_u64(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_I64: {
-      int64_t v;
-      nvs_get_i64(h_src, info.key, &v);
-      nvs_set_i64(h_dst, info.key, v);
-      break;
-    }
-    case NVS_TYPE_STR: {
-      size_t len;
-      if (nvs_get_str(h_src, info.key, NULL, &len) == ESP_OK) {
-        char *v = (char *)malloc(len);
-        if (v) {
-          nvs_get_str(h_src, info.key, v, &len);
-          nvs_set_str(h_dst, info.key, v);
-          free(v);
-        }
+      case NVS_TYPE_U8: {
+        uint8_t v;
+        nvs_get_u8(h_src, info.key, &v);
+        nvs_set_u8(h_dst, info.key, v);
+        break;
       }
-      break;
-    }
-    case NVS_TYPE_BLOB: {
-      size_t len;
-      if (nvs_get_blob(h_src, info.key, NULL, &len) == ESP_OK) {
-        void *v = malloc(len);
-        if (v) {
-          nvs_get_blob(h_src, info.key, v, &len);
-          nvs_set_blob(h_dst, info.key, v, len);
-          free(v);
-        }
+      case NVS_TYPE_I8: {
+        int8_t v;
+        nvs_get_i8(h_src, info.key, &v);
+        nvs_set_i8(h_dst, info.key, v);
+        break;
       }
-      break;
+      case NVS_TYPE_U16: {
+        uint16_t v;
+        nvs_get_u16(h_src, info.key, &v);
+        nvs_set_u16(h_dst, info.key, v);
+        break;
+      }
+      case NVS_TYPE_I16: {
+        int16_t v;
+        nvs_get_i16(h_src, info.key, &v);
+        nvs_set_i16(h_dst, info.key, v);
+        break;
+      }
+      case NVS_TYPE_U32: {
+        uint32_t v;
+        nvs_get_u32(h_src, info.key, &v);
+        nvs_set_u32(h_dst, info.key, v);
+        break;
+      }
+      case NVS_TYPE_I32: {
+        int32_t v;
+        nvs_get_i32(h_src, info.key, &v);
+        nvs_set_i32(h_dst, info.key, v);
+        break;
+      }
+      case NVS_TYPE_U64: {
+        uint64_t v;
+        nvs_get_u64(h_src, info.key, &v);
+        nvs_set_u64(h_dst, info.key, v);
+        break;
+      }
+      case NVS_TYPE_I64: {
+        int64_t v;
+        nvs_get_i64(h_src, info.key, &v);
+        nvs_set_i64(h_dst, info.key, v);
+        break;
+      }
+      case NVS_TYPE_STR: {
+        size_t len;
+        if (nvs_get_str(h_src, info.key, NULL, &len) == ESP_OK) {
+          char *v = (char *)malloc(len);
+          if (v) {
+            nvs_get_str(h_src, info.key, v, &len);
+            nvs_set_str(h_dst, info.key, v);
+            free(v);
+          }
+        }
+        break;
+      }
+      case NVS_TYPE_BLOB: {
+        size_t len;
+        if (nvs_get_blob(h_src, info.key, NULL, &len) == ESP_OK) {
+          void *v = malloc(len);
+          if (v) {
+            nvs_get_blob(h_src, info.key, v, &len);
+            nvs_set_blob(h_dst, info.key, v, len);
+            free(v);
+          }
+        }
+        break;
+      }
+      default:
+        break;
     }
-    }
-    err = nvs_entry_next(&it);
+    // nvs_entry_next returns the next iterator or NULL if finished.
+    it = nvs_entry_next(it);
   }
+
+  // Final cleanup for the iterator
   nvs_release_iterator(it);
 
   nvs_commit(h_dst);
